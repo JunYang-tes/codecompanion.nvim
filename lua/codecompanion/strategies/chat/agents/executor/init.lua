@@ -38,7 +38,7 @@ function Executor:setup_handlers()
     setup = function()
       vim.g.codecompanion_current_tool = self.tool.name
       if self.tool.handlers and self.tool.handlers.setup then
-        self.tool.handlers.setup(self.agent)
+        self.tool.handlers.setup(self.agent,self.tool)
       end
     end,
     on_exit = function()

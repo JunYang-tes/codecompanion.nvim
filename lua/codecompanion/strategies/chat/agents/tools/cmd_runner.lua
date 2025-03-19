@@ -157,8 +157,8 @@ return {
   end,
   handlers = {
     ---@param agent CodeCompanion.Agent The tool object
-    setup = function(agent)
-      local tool = agent.tool --[[@type CodeCompanion.Agent.Tool]]
+    ---@param tool CodeCompanion.Agent.Tool
+    setup = function(agent,tool)
       local action = tool.request.action
       local actions = vim.isarray(action) and action or { action }
 
