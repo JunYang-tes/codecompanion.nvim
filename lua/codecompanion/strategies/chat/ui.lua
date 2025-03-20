@@ -85,23 +85,20 @@ function UI.new(args)
   --   self.bufnr,
   --     'n',
   -- )
-  vim.keymap.set('n', 'y',
-    function()
-      if start_line ~= nil and end_line ~= nil then
-        local lines = vim.fn.getline(start_line, end_line)
-        local code = table.concat(lines, "\n")
-        vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
-        vim.api.nvim_buf_set_extmark(0, ns_id, start_line, 0, {
-          virt_text = { { "Copied" } },
-          virt_text_pos = "eol_right_align",
-        })
-        vim.fn.setreg('"', code)
-      end
-    end,
-    {
-      buffer = self.bufnr
-    }
-  )
+  vim.keymap.set("n", "y", function()
+    if start_line ~= nil and end_line ~= nil then
+      local lines = vim.fn.getline(start_line, end_line)
+      local code = table.concat(lines, "\n")
+      vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
+      vim.api.nvim_buf_set_extmark(0, ns_id, start_line, 0, {
+        virt_text = { { "Copied" } },
+        virt_text_pos = "eol_right_align",
+      })
+      vim.fn.setreg('"', code)
+    end
+  end, {
+    buffer = self.bufnr,
+  })
 
   return self
 end
@@ -511,7 +508,7 @@ function UI:fold_code()
 end
 
 function UI:is_in_code_block()
-  local line = vim.fn.line('.', self.winnr)
+  local line = vim.fn.line(".", self.winnr)
   local start_line = line
   local end_line = line
   local block_start_found = false
@@ -531,7 +528,7 @@ function UI:is_in_code_block()
   end
 
   -- Search downwards for the end of the code block
-  while end_line <= vim.fn.line('$') do
+  while end_line <= vim.fn.line("$") do
     local content = vim.fn.getline(end_line)
     if content:match("^```") then
       return true, start_line, end_line

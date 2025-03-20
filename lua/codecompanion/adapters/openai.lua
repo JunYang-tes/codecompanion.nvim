@@ -57,39 +57,39 @@ return {
     ---@return table
     form_messages = function(self, messages)
       messages = vim
-          .iter(messages)
-          :filter(function(m)
-            if m.opts and m.opts.image then
-              return self.opts.support_image
-            end
-            return true
-          end)
-          :map(function(m)
-            local model = self.schema.model.default
-            if type(model) == "function" then
-              model = model()
-            end
-            if vim.startswith(model, "o1") and m.role == "system" then
-              m.role = self.roles.user
-            end
-            if m.opts and m.opts.image then
-              return {
-                role = m.role,
-                content = {
-                  type = "image_url",
-                  image_url = {
-                    url = "data:image/png;base64," .. m.content
-                  }
-                }
-              }
-            end
-
+        .iter(messages)
+        :filter(function(m)
+          if m.opts and m.opts.image then
+            return self.opts.support_image
+          end
+          return true
+        end)
+        :map(function(m)
+          local model = self.schema.model.default
+          if type(model) == "function" then
+            model = model()
+          end
+          if vim.startswith(model, "o1") and m.role == "system" then
+            m.role = self.roles.user
+          end
+          if m.opts and m.opts.image then
             return {
               role = m.role,
-              content = m.content,
+              content = {
+                type = "image_url",
+                image_url = {
+                  url = "data:image/png;base64," .. m.content,
+                },
+              },
             }
-          end)
-          :totable()
+          end
+
+          return {
+            role = m.role,
+            content = m.content,
+          }
+        end)
+        :totable()
 
       return { messages = messages }
     end,
@@ -202,8 +202,7 @@ return {
       order = 1,
       mapping = "parameters",
       type = "enum",
-      desc =
-      "ID of the model to use. See the model endpoint compatibility table for details on which models work with the Chat API.",
+      desc = "ID of the model to use. See the model endpoint compatibility table for details on which models work with the Chat API.",
       ---@type string|fun(): string
       default = "gpt-4o",
       choices = {
@@ -233,8 +232,7 @@ return {
         end
       end,
       default = "medium",
-      desc =
-      "Constrains effort on reasoning for reasoning models. Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response.",
+      desc = "Constrains effort on reasoning for reasoning models. Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response.",
       choices = {
         "high",
         "medium",
@@ -247,8 +245,7 @@ return {
       type = "number",
       optional = true,
       default = 1,
-      desc =
-      "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally recommend altering this or top_p but not both.",
+      desc = "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally recommend altering this or top_p but not both.",
       validate = function(n)
         return n >= 0 and n <= 2, "Must be between 0 and 2"
       end,
@@ -259,8 +256,7 @@ return {
       type = "number",
       optional = true,
       default = 1,
-      desc =
-      "An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered. We generally recommend altering this or temperature but not both.",
+      desc = "An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered. We generally recommend altering this or temperature but not both.",
       validate = function(n)
         return n >= 0 and n <= 1, "Must be between 0 and 1"
       end,
@@ -285,8 +281,7 @@ return {
       type = "integer",
       optional = true,
       default = nil,
-      desc =
-      "The maximum number of tokens to generate in the chat completion. The total length of input tokens and generated tokens is limited by the model's context length.",
+      desc = "The maximum number of tokens to generate in the chat completion. The total length of input tokens and generated tokens is limited by the model's context length.",
       validate = function(n)
         return n > 0, "Must be greater than 0"
       end,
@@ -297,8 +292,7 @@ return {
       type = "number",
       optional = true,
       default = 0,
-      desc =
-      "Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.",
+      desc = "Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.",
       validate = function(n)
         return n >= -2 and n <= 2, "Must be between -2 and 2"
       end,
@@ -309,8 +303,7 @@ return {
       type = "number",
       optional = true,
       default = 0,
-      desc =
-      "Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.",
+      desc = "Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.",
       validate = function(n)
         return n >= -2 and n <= 2, "Must be between -2 and 2"
       end,
@@ -321,8 +314,7 @@ return {
       type = "map",
       optional = true,
       default = nil,
-      desc =
-      "Modify the likelihood of specified tokens appearing in the completion. Maps tokens (specified by their token ID) to an associated bias value from -100 to 100. Use https://platform.openai.com/tokenizer to find token IDs.",
+      desc = "Modify the likelihood of specified tokens appearing in the completion. Maps tokens (specified by their token ID) to an associated bias value from -100 to 100. Use https://platform.openai.com/tokenizer to find token IDs.",
       subtype_key = {
         type = "integer",
       },
@@ -339,8 +331,7 @@ return {
       type = "string",
       optional = true,
       default = nil,
-      desc =
-      "A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.",
+      desc = "A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.",
       validate = function(u)
         return u:len() < 100, "Cannot be longer than 100 characters"
       end,

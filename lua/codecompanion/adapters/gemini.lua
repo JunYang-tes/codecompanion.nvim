@@ -52,14 +52,14 @@ return {
     ---@return table
     form_messages = function(self, messages)
       local system = vim
-          .iter(messages)
-          :filter(function(msg)
-            return msg.role == "system"
-          end)
-          :map(function(msg)
-            return { text = msg.content }
-          end)
-          :totable()
+        .iter(messages)
+        :filter(function(msg)
+          return msg.role == "system"
+        end)
+        :map(function(msg)
+          return { text = msg.content }
+        end)
+        :totable()
 
       local system_instruction
       if #system > 0 then
@@ -71,34 +71,35 @@ return {
 
       -- Format messages (remove all system prompts)
       local output = vim
-          .iter(messages)
-          :filter(function(msg)
-            return msg.role ~= "system"
-          end)
-          :map(function(msg)
-            if msg.opts and msg.opts.image then
-              return {
-                role = self.roles.user,
-                parts = {
-                  {
-                    text = "The following is an image,filename is" .. msg.opts.reference
-                  }, {
-                  inline_data = {
-                    mime_type = msg.opts.ft,
-                    data = msg.content
-                  }
-                }
-                }
-              }
-            end
+        .iter(messages)
+        :filter(function(msg)
+          return msg.role ~= "system"
+        end)
+        :map(function(msg)
+          if msg.opts and msg.opts.image then
             return {
               role = self.roles.user,
               parts = {
-                { text = msg.content },
+                {
+                  text = "The following is an image,filename is" .. msg.opts.reference,
+                },
+                {
+                  inline_data = {
+                    mime_type = msg.opts.ft,
+                    data = msg.content,
+                  },
+                },
               },
             }
-          end)
-          :totable()
+          end
+          return {
+            role = self.roles.user,
+            parts = {
+              { text = msg.content },
+            },
+          }
+        end)
+        :totable()
 
       local result = {
         contents = output,
@@ -189,8 +190,7 @@ return {
     model = {
       order = 1,
       type = "enum",
-      desc =
-      "The model that will complete your prompt. See https://ai.google.dev/gemini-api/docs/models/gemini#model-variations for additional details and options.",
+      desc = "The model that will complete your prompt. See https://ai.google.dev/gemini-api/docs/models/gemini#model-variations for additional details and options.",
       default = "gemini-2.0-flash",
       choices = {
         "gemini-2.0-flash",
@@ -231,8 +231,7 @@ return {
       type = "integer",
       optional = true,
       default = nil,
-      desc =
-      "The maximum cumulative probability of tokens to consider when sampling. The model uses combined Top-k and Top-p (nucleus) sampling. Tokens are sorted based on their assigned probabilities so that only the most likely tokens are considered. Top-k sampling directly limits the maximum number of tokens to consider, while Nucleus sampling limits the number of tokens based on the cumulative probability.",
+      desc = "The maximum cumulative probability of tokens to consider when sampling. The model uses combined Top-k and Top-p (nucleus) sampling. Tokens are sorted based on their assigned probabilities so that only the most likely tokens are considered. Top-k sampling directly limits the maximum number of tokens to consider, while Nucleus sampling limits the number of tokens based on the cumulative probability.",
       validate = function(n)
         return n > 0, "Must be greater than 0"
       end,
@@ -265,8 +264,7 @@ return {
       type = "number",
       optional = true,
       default = nil,
-      desc =
-      "Frequency penalty applied to the next token's logprobs, multiplied by the number of times each token has been seen in the response so far.",
+      desc = "Frequency penalty applied to the next token's logprobs, multiplied by the number of times each token has been seen in the response so far.",
     },
   },
 }

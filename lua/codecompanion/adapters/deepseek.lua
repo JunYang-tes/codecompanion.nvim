@@ -51,7 +51,6 @@ return {
         :totable()
       system_messages = utils.merge_messages(system_messages)
 
-      
       messages = vim
         .iter(messages)
         :filter(function(msg)

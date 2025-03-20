@@ -1,9 +1,9 @@
 local path = require("plenary.path")
 
+local base64 = require("codecompanion.utils.base64")
 local config = require("codecompanion.config")
 local log = require("codecompanion.utils.log")
 local util = require("codecompanion.utils")
-local base64 = require("codecompanion.utils.base64")
 
 local fmt = string.format
 
@@ -19,15 +19,15 @@ local providers = {
   default = function(SlashCommand)
     local default = require("codecompanion.providers.slash_commands.default")
     return default
-        .new({
-          output = function(selection)
-            return SlashCommand:output(selection)
-          end,
-          SlashCommand = SlashCommand,
-          title = CONSTANTS.PROMPT,
-        })
-        :find_files()
-        :display()
+      .new({
+        output = function(selection)
+          return SlashCommand:output(selection)
+        end,
+        SlashCommand = SlashCommand,
+        title = CONSTANTS.PROMPT,
+      })
+      :find_files()
+      :display()
   end,
 
   ---The Snacks.nvim provider
@@ -157,11 +157,8 @@ function SlashCommand:read(selected)
 
   if ft == nil then
     local postfix = string.lower(selected.path:match("^.+%.([^%.]+)$"))
-    if postfix == 'png' or
-        postfix == 'jpg' or
-        postfix == 'jpeg'
-    then
-      ft = 'image/' .. postfix
+    if postfix == "png" or postfix == "jpg" or postfix == "jpeg" then
+      ft = "image/" .. postfix
     end
   end
   log:debug("ft: %s, relative_path: %s, id: %s", ft, relative_path, id)
@@ -190,7 +187,7 @@ function SlashCommand:output(selected, opts)
     return log:warn("Could not read the file: %s", selected.path)
   end
 
-  if ft and ft:match('^image/') then
+  if ft and ft:match("^image/") then
     log:debug("add a image message")
     self.Chat:add_message({
       role = config.constants.USER_ROLE,
@@ -228,8 +225,6 @@ function SlashCommand:output(selected, opts)
       content = description or "",
     }, { reference = id, visible = false })
   end
-
-
 
   if opts.pin then
     return
