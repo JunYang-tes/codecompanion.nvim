@@ -126,7 +126,7 @@ M.options = {
 
     for key, val in pairs(tools) do
       if key ~= "opts" then
-        table.insert(lines, indent .. pad("@" .. key, max_length, 4) .. " " .. val.description)
+        table.insert(lines, indent .. pad("@" .. key, max_length, 4) .. " " .. (val.description or ""))
       end
     end
 
