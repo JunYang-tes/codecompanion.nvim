@@ -51,10 +51,15 @@ return {
         :totable()
       system_messages = utils.merge_messages(system_messages)
 
-      -- Remove system messages then merge messages with the same role
+      
       messages = vim
         .iter(messages)
         :filter(function(msg)
+          -- deepseek doesn't support image yet
+          if msg.opts and msg.opts.image then
+            return false
+          end
+          -- Remove system messages then merge messages with the same role
           return msg.role ~= "system"
         end)
         :map(function(msg)

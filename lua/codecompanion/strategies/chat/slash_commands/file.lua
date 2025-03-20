@@ -3,6 +3,7 @@ local path = require("plenary.path")
 local config = require("codecompanion.config")
 local log = require("codecompanion.utils.log")
 local util = require("codecompanion.utils")
+local base64 = require("codecompanion.utils.base64")
 
 local fmt = string.format
 
@@ -18,15 +19,15 @@ local providers = {
   default = function(SlashCommand)
     local default = require("codecompanion.providers.slash_commands.default")
     return default
-      .new({
-        output = function(selection)
-          return SlashCommand:output(selection)
-        end,
-        SlashCommand = SlashCommand,
-        title = CONSTANTS.PROMPT,
-      })
-      :find_files()
-      :display()
+        .new({
+          output = function(selection)
+            return SlashCommand:output(selection)
+          end,
+          SlashCommand = SlashCommand,
+          title = CONSTANTS.PROMPT,
+        })
+        :find_files()
+        :display()
   end,
 
   ---The Snacks.nvim provider
@@ -154,6 +155,22 @@ function SlashCommand:read(selected)
   local relative_path = vim.fn.fnamemodify(selected.path, ":.")
   local id = "<file>" .. relative_path .. "</file>"
 
+  if ft == nil then
+    local postfix = string.lower(selected.path:match("^.+%.([^%.]+)$"))
+    if postfix == 'png' or
+        postfix == 'jpg' or
+        postfix == 'jpeg'
+    then
+      ft = 'image/' .. postfix
+    end
+  end
+  log:debug("ft: %s, relative_path: %s, id: %s", ft, relative_path, id)
+
+  -- Check if the file is an image
+  if ft and ft:match("^image/") then
+    content = base64.encode(content)
+  end
+
   return content, ft, id, relative_path
 end
 
@@ -173,37 +190,46 @@ function SlashCommand:output(selected, opts)
     return log:warn("Could not read the file: %s", selected.path)
   end
 
-  -- Workspaces allow the user to set their own custom description which should take priority
-  local description
-  if selected.description then
-    description = fmt(
-      [[%s
-
-```%s
-%s
-```]],
-      selected.description,
-      ft,
-      content
-    )
+  if ft and ft:match('^image/') then
+    log:debug("add a image message")
+    self.Chat:add_message({
+      role = config.constants.USER_ROLE,
+      content = content,
+    }, { reference = id, visible = false, image = true, ft = ft })
   else
-    description = fmt(
-      [[%s %s:
+    -- Workspaces allow the user to set their own custom description which should take priority
+    local description
+    if selected.description then
+      description = fmt(
+        [[%s
 
 ```%s
 %s
 ```]],
-      opts.pin and "Here is the updated content from the file" or "Here is the content from the file",
-      "located at `" .. relative_path .. "`",
-      ft,
-      content
-    )
+        selected.description,
+        ft,
+        content
+      )
+    else
+      description = fmt(
+        [[%s %s:
+
+```%s
+%s
+```]],
+        opts.pin and "Here is the updated content from the file" or "Here is the content from the file",
+        "located at `" .. relative_path .. "`",
+        ft,
+        content
+      )
+    end
+    self.Chat:add_message({
+      role = config.constants.USER_ROLE,
+      content = description or "",
+    }, { reference = id, visible = false })
   end
 
-  self.Chat:add_message({
-    role = config.constants.USER_ROLE,
-    content = description or "",
-  }, { reference = id, visible = false })
+
 
   if opts.pin then
     return
