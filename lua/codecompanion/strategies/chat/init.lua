@@ -1044,7 +1044,7 @@ function Chat:add_buf_message(data, opts)
       has_been_reasoning = true
       write(data.reasoning)
     end
-    if data.content ~= "" then
+    if data.content ~= "" and data.content ~= nil then
       if has_been_reasoning then
         has_been_reasoning = false
         table.insert(lines, "")
