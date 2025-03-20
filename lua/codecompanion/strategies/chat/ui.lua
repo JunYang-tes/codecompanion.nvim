@@ -61,6 +61,48 @@ function UI.new(args)
     end,
   })
 
+  local ns_id = vim.api.nvim_create_namespace("CodeBlockCopy")
+  local start_line = nil
+  local end_line = nil
+  api.nvim_create_autocmd("CursorMoved", {
+    group = self.aug,
+    buffer = self.bufnr,
+    callback = function()
+      vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
+      local inside, start, end_ = self:is_in_code_block()
+      start_line = start
+      end_line = end_
+      -- If the cursor is inside a code block, display "Press y to copy"
+      if inside and start ~= nil then
+        vim.api.nvim_buf_set_extmark(0, ns_id, start, 0, {
+          virt_text = { { "Press y to copy" } },
+          virt_text_pos = "eol_right_align",
+        })
+      end
+    end,
+  })
+  -- api.nvim_buf_set_keymap(
+  --   self.bufnr,
+  --     'n',
+  -- )
+  vim.keymap.set('n', 'y',
+    function()
+      if start_line ~= nil and end_line ~= nil then
+        local lines = vim.fn.getline(start_line, end_line)
+        local code = table.concat(lines, "\n")
+        vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
+        vim.api.nvim_buf_set_extmark(0, ns_id, start_line, 0, {
+          virt_text = { { "Copied" } },
+          virt_text_pos = "eol_right_align",
+        })
+        vim.fn.setreg('"', code)
+      end
+    end,
+    {
+      buffer = self.bufnr
+    }
+  )
+
   return self
 end
 
@@ -466,6 +508,38 @@ function UI:fold_code()
   end
 
   return self
+end
+
+function UI:is_in_code_block()
+  local line = vim.fn.line('.', self.winnr)
+  local start_line = line
+  local end_line = line
+  local block_start_found = false
+
+  -- Search upwards for the start of the code block
+  while start_line > 1 do
+    local content = vim.fn.getline(start_line)
+    if content:match("^```[^`]+") then
+      block_start_found = true
+      break
+    end
+    start_line = start_line - 1
+  end
+
+  if not block_start_found then
+    return false
+  end
+
+  -- Search downwards for the end of the code block
+  while end_line <= vim.fn.line('$') do
+    local content = vim.fn.getline(end_line)
+    if content:match("^```") then
+      return true, start_line, end_line
+    end
+    end_line = end_line + 1
+  end
+
+  return false
 end
 
 ---Lock the chat buffer from editing
