@@ -75,16 +75,12 @@ function UI.new(args)
       -- If the cursor is inside a code block, display "Press y to copy"
       if inside and start ~= nil then
         vim.api.nvim_buf_set_extmark(0, ns_id, start, 0, {
-          virt_text = { { "Press y to copy" } },
+          virt_text = { { "Press y to copy,v to select all " } },
           virt_text_pos = "eol_right_align",
         })
       end
     end,
   })
-  -- api.nvim_buf_set_keymap(
-  --   self.bufnr,
-  --     'n',
-  -- )
   vim.keymap.set("n", "y", function()
     if start_line ~= nil and end_line ~= nil then
       local lines = vim.fn.getline(start_line, end_line)
@@ -95,6 +91,16 @@ function UI.new(args)
         virt_text_pos = "eol_right_align",
       })
       vim.fn.setreg('"', code)
+    end
+  end, {
+    buffer = self.bufnr,
+  })
+
+  vim.keymap.set("n", "v", function()
+    if start_line ~= nil and end_line ~= nil then
+      vim.api.nvim_win_set_cursor(0, { start_line + 1, 0 })
+      vim.cmd("normal! V")
+      vim.api.nvim_win_set_cursor(0, { end_line - 1, 0 })
     end
   end, {
     buffer = self.bufnr,
