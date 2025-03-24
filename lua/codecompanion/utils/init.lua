@@ -143,4 +143,92 @@ function M.set_option(bufnr, opt, value)
   end
 end
 
+function M.get_project_root()
+  local project_markers = { ".git", ".svn", ".hg", "package.json", "Cargo.toml" }
+  return vim.fs.root(0, project_markers)
+end
+
+---Sanitize filenames to safely store path information
+---Replaces "_" with "__" to escape existing underscores, then "/" with "_"
+---@param filename string Original filename/path containing possible underscores and slashes
+---@return string Sanitized filename safe for flat storage
+---@example
+--- sanitize_filename("a/b_c.txt") -> "a_b__c.txt"
+function M.sanitize_filename(filename)
+  -- First escape existing underscores
+  local escaped = filename:gsub("_", "__")
+  -- Then replace slashes with single underscores
+  local r, _ = escaped:gsub("/", "_")
+  return r
+end
+
+---Reverse the sanitization process to recover original path
+---First converts "_" back to "/", then restores original underscores from "__"
+---@param sanitized_name string Sanitized filename from sanitize_filename()
+---@return string Original path with slashes and underscores restored
+---@example
+--- desanitize_filename("a_b__c.txt") -> "a/b_c.txt"
+function M.desanitize_filename(sanitized_name)
+  -- First replace separator underscores with slashes
+  local with_slashes = sanitized_name:gsub("_", "/")
+  -- Then unescape original underscores
+  local r, _ = with_slashes:gsub("//", "_")
+  return r
+end
+
+---Get prompt content from files
+---Search location: project root and cwd                                                          return M
+---Filename pattern: .prompt .*.prompt
+---@class CodeCompanionPromptContent
+---@field prompt string
+---@field adapter_prompt table<string, string>
+---@return CodeCompanionPromptContent
+---@example
+--- { prompt: "", model_prompt: { ["deepseek-r1"] = "" } }
+function M.get_prompt_content()
+  local project_root = M.get_project_root()
+  local cwd = vim.fn.getcwd()
+
+  local function read_prompt_file(filepath)
+    local file = io.open(filepath, "r")
+    if file then
+      local content = file:read("a")
+      file:close()
+      return content
+    end
+    return ""
+  end
+
+  local function process_prompt_files(dir)
+    local prompt_content = { prompt = "", adapter_prompt = {} }
+    local prompt_files = {}
+    for entry in vim.fs.dir(dir, { depth = 1 }) do
+      if entry:match("%.prompt$") then
+        table.insert(prompt_files, vim.fs.joinpath(dir, entry))
+      end
+    end
+    for _, filepath in ipairs(prompt_files) do
+      local filename = vim.fs.basename(filepath)
+      local content = read_prompt_file(filepath)
+      if filename == ".prompt" then
+        prompt_content.prompt = content
+      elseif filename:match("%.prompt$") then
+        local adapter_name = M.desanitize_filename(filename:gsub("%.prompt$", ""):sub(2)) -- remove .prompt and leading dot
+        prompt_content.adapter_prompt[adapter_name] = content
+      end
+    end
+    print(vim.inspect(prompt_content))
+    return prompt_content
+  end
+
+  if vim.loop.fs_stat(vim.fs.joinpath(cwd, ".codecompanion")) ~= nil then
+    return process_prompt_files(vim.fs.joinpath(cwd, ".codecompanion"))
+  end
+
+  if project_root and vim.loop.fs_stat(vim.fs.joinpath(project_root, ".codecompanion")) ~= nil then
+    return process_prompt_files(vim.fs.joinpath(project_root, ".codecompanion"))
+  end
+  return { prompt = "", adapter_prompt = {} }
+end
+
 return M

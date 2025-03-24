@@ -487,13 +487,7 @@ M.change_adapter = {
       end
 
       if current_adapter ~= selected then
-        chat.adapter = require("codecompanion.adapters").resolve(adapters[selected])
-        util.fire(
-          "ChatAdapter",
-          { bufnr = chat.bufnr, adapter = require("codecompanion.adapters").make_safe(chat.adapter) }
-        )
-        chat.ui.adapter = chat.adapter
-        chat:apply_settings()
+        chat:change_adapter(require("codecompanion.adapters").resolve(adapters[selected]))
       end
 
       -- Update the system prompt

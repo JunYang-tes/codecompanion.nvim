@@ -306,7 +306,7 @@ function Chat.new(args)
       :set()
   end
 
-  self:add_system_prompt():set_autocmds()
+  self:add_system_prompt():add_custom_system_prompt():add_custom_adapter_prompt():set_autocmds()
 
   last_chat = self
 
@@ -438,6 +438,14 @@ function Chat:apply_settings(settings)
   end
 end
 
+function Chat:change_adapter(adapter)
+  self.adapter = adapter
+  self.ui.adapter = adapter
+  util.fire("ChatAdapter", { bufnr = self.bufnr, adapter = require("codecompanion.adapters").make_safe(self.adapter) })
+  self:add_custom_adapter_prompt()
+  self:apply_settings()
+end
+
 ---Set a model in the chat buffer
 ---@param model string
 ---@return self
@@ -539,6 +547,52 @@ function Chat:add_system_prompt(prompt, opts)
     system_prompt.opts = opts
 
     table.insert(self.messages, index or 1, system_prompt)
+  end
+  return self
+end
+
+function Chat:add_custom_system_prompt()
+  local custom_prompt = util.get_prompt_content()
+  local index = 1
+  for i = #self.messages, 1, -1 do
+    if self.messages[i].role == config.constants.SYSTEM_ROLE then
+      index = i + 1
+      break
+    end
+  end
+  log:debug("add custom_prompt:", vim.inspect(custom_prompt))
+  if custom_prompt.prompt ~= "" then
+    table.insert(self.messages, index, {
+      role = config.constants.SYSTEM_ROLE,
+      cycle = self.cycle,
+      opts = { visible = false },
+      content = custom_prompt.prompt,
+    })
+  end
+  return self
+end
+
+function Chat:add_custom_adapter_prompt()
+  local adapter_name = self.adapter.name
+  local last_sys_msg_index = 1
+
+  for i = #self.messages, 1, -1 do
+    if self.messages[i].role == config.constants.SYSTEM_ROLE then
+      last_sys_msg_index = i + 1
+      break
+    end
+  end
+
+  self:remove_tagged_message("adapter")
+
+  local custom_prompt = util.get_prompt_content()
+  if custom_prompt.adapter_prompt[adapter_name] then
+    table.insert(self.messages, last_sys_msg_index, {
+      role = config.constants.SYSTEM_ROLE,
+      cycle = self.cycle,
+      opts = { visible = false, tag = "adapter" },
+      content = custom_prompt.adapter_prompt[adapter_name],
+    })
   end
   return self
 end
